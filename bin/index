@@ -1,61 +1,71 @@
 #!/usr/bin/env node
 
-const fs = require('fs-extra');
+const fs = require("fs-extra");
 // 字体颜色
-const chalk = require('chalk');
+const chalk = require("chalk");
 // 版本检测
-const semver = require('semver');
+const semver = require("semver");
 // 要求node 版本
-const requiredVersion = require('../package.json').engines.node
+const requiredVersion = require("../package.json").engines.node;
 // '1.2.3' 是否满足 后面的条件 '>=2.5.0 || 5.0.0 - 7.2.3'
 // console.log(semver.satisfies(process.version, requiredVersion))
 
 // 检测node 版本是否符合当前cli要求
 function checkNodeVersion(wanted, id) {
-    if (!semver.satisfies(process.version, wanted)) {
-        console.log(chalk.red(
-            'You are using Node ' + process.version + ', but this version of ' + id +
-            ' requires Node ' + wanted + '.\nPlease upgrade your Node version.'
-        ))
-        process.exit(1)
-    }
+  if (!semver.satisfies(process.version, wanted)) {
+    console.log(
+      chalk.red(
+        "You are using Node " +
+          process.version +
+          ", but this version of " +
+          id +
+          " requires Node " +
+          wanted +
+          ".\nPlease upgrade your Node version."
+      )
+    );
+    process.exit(1);
+  }
 }
-checkNodeVersion(requiredVersion, 'cli-xzc');
+checkNodeVersion(requiredVersion, "cli-xzc");
 
 // node 程序制作命令控制
-const program = require('commander');
-program.version('0.0.1');
+const program = require("commander");
+program.version("0.0.1");
 
 program
-    .command('create <app-name>')
-    .description('create a new project powered by vue-cli-service')
-    .option('-p, --preset <presetName>', 'Skip prompts and use saved or remote preset')
-    .action((name, cmd) => {
-        const options = cleanArgs(cmd)
-        console.log(options)
-        console.log(1)
-
-        if (minimist(process.argv.slice(3))._.length > 1) {
-            console.log(chalk.yellow('\n Info: You provided more than one argument. The first one will be used as the app\'s name, the rest are ignored.'))
-        }
-        // --git makes commander to default git to true
-        if (process.argv.includes('-g') || process.argv.includes('--git')) {
-            options.forceGit = true
-        }
-        require('../lib/create')(name, options)
-    })
+  .command("create <app-name>")
+  .description("create a new project powered by vue-cli-service")
+  .option('-d, --default', 'Skip prompts and use default preset')
+  .option('-i, --inlinePreset <json>', 'Skip prompts and use inline JSON string as preset')
+  .option('-m, --packageManager <command>', 'Use specified npm client when installing dependencies')
+  .option('-r, --registry <url>', 'Use specified npm registry when installing dependencies (only for npm)')
+  .option('-g, --git [message]', 'Force git initialization with initial commit message')
+  .option('-n, --no-git', 'Skip git initialization')
+  .option('-f, --force', 'Overwrite target directory if it exists')
+  .option('-c, --clone', 'Use git clone when fetching remote preset')
+  .action((name, cmd) => {
+    const options = cleanArgs(cmd);
+    console.log(options);
+    console.log(process.cwd());
+  });
+program.parse(process.argv);
 
 // commander passes the Command object itself as options,
 // extract only actual options into a fresh object.
 function cleanArgs(cmd) {
-    const args = {}
-    cmd.options.forEach(o => {
-        const key = camelize(o.long.replace(/^--/, ''))
-        // if an option is not present and Command has a method with the same name
-        // it should not be copied
-        if (typeof cmd[key] !== 'function' && typeof cmd[key] !== 'undefined') {
-            args[key] = cmd[key]
-        }
-    })
-    return args
+  const args = {};
+  cmd.options.forEach(o => {
+    const key = camelize(o.long.replace(/^--/, ""));
+    // if an option is not present and Command has a method with the same name
+    // it should not be copied
+    if (typeof cmd[key] !== "function" && typeof cmd[key] !== "undefined") {
+      args[key] = cmd[key];
+    }
+  });
+  return args;
+}
+
+function camelize(str) {
+  return str.replace(/-(\w)/g, (_, c) => (c ? c.toUpperCase() : ""));
 }
